@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<cinder>
+<block
+	name="AfterEffects"
+	id="com.Atarabi.cinder.AfterEffects"
+	author="Kareobana"
+	license="MIT"
+	summary="Communicate with Adobe After Effects."
+	>
+	<headerPattern>src/*.h</headerPattern>
+	<sourcePattern>src/*.cpp</sourcePattern>
+	<includePath>src</includePath>
+</block>
+</cinder>
