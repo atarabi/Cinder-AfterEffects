@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<cinder>
+<template name="AfterEffects: Basic" parent="org.libcinder.apptemplates.basicopengl">
+	<requires>com.Atarabi.cinder.AfterEffects</requires>
+	<requires>org.libcinder.osc</requires>
+	<supports os="macosx" />
+	<supports os="msw" />
+	<source replaceContents="true" replaceName="true">src/_TBOX_PREFIX_App.cpp</source>
+</template>
+</cinder>

@@ -11,4 +11,5 @@
 	<sourcePattern>src/*.cpp</sourcePattern>
 	<includePath>src</includePath>
 </block>
+<template>templates/Basic AfterEffects/template.xml</template>
 </cinder>
