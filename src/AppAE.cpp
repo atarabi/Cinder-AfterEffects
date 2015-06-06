@@ -24,10 +24,12 @@
 
 #include "AppAE.h"
 #include "cinder/Utilities.h"
+#include "cinder/CinderMath.h"
 #include <iomanip>
 #include <algorithm>
 #include <sstream>
 #include <cassert>
+#include <stdexcept>
 #include <chrono>
 #include <thread>
 
@@ -58,6 +60,9 @@ std::string parmeterTypeToString(ParameterType type)
 		case ParameterType::Color:
 			return "color";
 	}
+
+	assert(0);
+	throw std::invalid_argument("invalid parameter type");
 }
 
 void addValueToMessage(cinder::osc::Message &message, ParameterType type, ParameterValue value)
@@ -87,7 +92,7 @@ void addValueToMessage(cinder::osc::Message &message, ParameterType type, Parame
 	}
 }
 
-}
+} //namespace
 
 
 void AppAE::prepareSettings(Settings *settings)
@@ -235,7 +240,7 @@ CameraAE::Parameter AppAE::getCameraParameter(uint32_t frame) const
 		frame = mDuration - 1;
 	}
 
-	return mCameraParameters[frame];
+	return mCameraGetters[frame];
 }
 
 void AppAE::setParameter(const std::string &name, ParameterType type, ParameterValue value)
@@ -250,6 +255,13 @@ void AppAE::setParameter(const std::string &name, ParameterType type, ParameterV
 	mSetters[name].values.push_back(std::make_pair(mCurrentFrame, value));
 }
 
+void AppAE::setCameraParameter(const cinder::Camera &camera)
+{
+	assert(mState == State::Render);
+
+	mCameraSetters.push_back(std::make_pair(mCurrentFrame, CameraAE::Parameter{ camera.getFov(), camera.getInverseModelViewMatrix() }));
+}
+
 bool AppAE::useFbo() const
 {
 	return mUseFbo && mWrite;
@@ -259,7 +271,7 @@ bool AppAE::isParameterCached() const
 {
 	if (mUseCamera)
 	{
-		if (mCameraParameters.size() != mDuration)
+		if (mCameraGetters.size() != mDuration)
 		{
 			return false;
 		}
@@ -289,6 +301,7 @@ void AppAE::transition(State state)
 	switch (state)
 	{
 		case State::Setup:
+			mCameraSetters.clear();
 			mSetters.clear();
 			break;
 		case State::Render:
@@ -335,10 +348,95 @@ void AppAE::setdown()
 	}
 
 	//setdown
+	static const int MAX_CAMERA_ARG_NUM = 30;
 	static const int MAX_ARG_NUM = 150;
 
 	if (mWrite)
 	{
+		if (!mCameraSetters.empty())
+		{
+			std::string prefix = "/cinder/setdown/cameraAE/";
+			int valueSize = static_cast<int>(mCameraSetters.size());
+
+			//begin
+			{
+				cinder::osc::Message reply;
+				reply.setAddress(prefix + "begin");
+				reply.addStringArg("camera");
+				reply.addIntArg(static_cast<int32_t>(static_cast<double>(valueSize) / MAX_CAMERA_ARG_NUM + 0.5f));
+				mSender.sendMessage(reply);
+			}
+
+			for (int i = 0, n = 0; i < valueSize; i += MAX_CAMERA_ARG_NUM, ++n)
+			{
+				cinder::osc::Message reply;
+
+				reply.setAddress(prefix + std::to_string(n));
+
+				for (int j = 0, total = std::min(MAX_CAMERA_ARG_NUM, valueSize - i); j < total; ++j)
+				{
+					auto &pair = mCameraSetters[i + j];
+					auto frame = pair.first;
+					auto &value = pair.second;
+					float fov = cinder::toRadians(value.fov);
+					auto cameraMatrix = value.cameraMatrix;
+					cameraMatrix.scale(cinder::Vec3f{ 1.f, -1.f, -1.f });
+
+					//calc position
+					cinder::Vec3f position{cameraMatrix.at(0, 3), cameraMatrix.at(1, 3), cameraMatrix.at(2, 3)};
+
+					//calc orientation
+					cinder::Vec3f orientation{};
+					{
+						orientation.y = std::asin(cameraMatrix.at(0, 2));
+
+						float cosY = std::cos(orientation.y);
+						if (cosY != 0.f)
+						{
+							orientation.x = std::atan2(-cameraMatrix.at(1, 2), cameraMatrix.at(2, 2));
+							orientation.z = std::asin(-cameraMatrix.at(0, 1) / cosY);
+							if (cameraMatrix.at(0, 0) < 0.f)
+							{
+								orientation.z = static_cast<float>(M_PI) - orientation.z;
+							}
+						}
+						else
+						{
+							orientation.x = std::atan2(cameraMatrix.at(2, 1), cameraMatrix.at(1, 1));
+							orientation.y = 0.5f * static_cast<float>(M_PI);
+							orientation.z = 0.f;
+						}
+
+						orientation *= 57.295779513082321f; // ( x * 180 / PI )
+					}
+
+					//calc zoom
+					float zoom = getHeight() / (2.f * std::tan(fov / 2.f));
+
+					//add args
+					reply.addIntArg(frame);
+					reply.addFloatArg(position.x);
+					reply.addFloatArg(position.y);
+					reply.addFloatArg(position.z);
+					reply.addFloatArg(orientation.x);
+					reply.addFloatArg(orientation.y);
+					reply.addFloatArg(orientation.z);
+					reply.addFloatArg(zoom);
+
+					if (j == 0)
+					{
+						console() << "Frame: " << frame << std::endl;
+						console() << "Position: " << position << std::endl;
+						console() << "Camera: " << cameraMatrix << std::endl;
+						console() << "Orientation: " << orientation << std::endl;
+						console() << "Zoom: " << zoom << std::endl;
+					}
+				}
+
+				mSender.sendMessage(reply);
+			}
+		}
+
 		std::vector<Setter*> setters;
 		for (auto &pair : mSetters)
 		{
@@ -374,9 +472,10 @@ void AppAE::setdown()
 
 				for (int j = 0, total = std::min(MAX_ARG_NUM, valueSize - i); j < total; ++j)
 				{
-					std::pair<int32_t, ParameterValue> &pair = values[i + j];
-					ParameterValue &value = pair.second;
-					reply.addIntArg(pair.first);
+					auto &pair = values[i + j];
+					auto frame = pair.first;
+					auto &value = pair.second;
+					reply.addIntArg(frame);
 					addValueToMessage(reply, type, value);
 				}
 
@@ -550,11 +649,11 @@ void AppAE::processPrerenderMessage(const cinder::osc::Message &message, const s
 
 		if (parameter_name == "CameraAE")
 		{
-			auto &camera_parameters = mCameraParameters;
+			auto &camera_getters = mCameraGetters;
 
 			if (times == "begin")
 			{
-				camera_parameters.clear();
+				camera_getters.clear();
 			}
 
 			for (int i = 0; i < argNum; i += 13)
@@ -567,15 +666,15 @@ void AppAE::processPrerenderMessage(const cinder::osc::Message &message, const s
 					message.getArgAsFloat(i + 10), message.getArgAsFloat(i + 11), message.getArgAsFloat(i + 12), 1.f
 				};
 
-				camera_parameters.push_back({ fov, matrix });
+				camera_getters.push_back({ fov, matrix });
 			}
 
 			if (times == "last")
 			{
-				if (camera_parameters.size() != mDuration)
+				if (camera_getters.size() != mDuration)
 				{
 					err = "invalid arg size";
-					camera_parameters.clear();
+					camera_getters.clear();
 					break;
 				}
 			}
@@ -688,4 +787,4 @@ void AppAE::writeImage()
 	mWriter.pushImage(path, surface);
 }
 
-}
+} //namespace atarabi

@@ -37,22 +37,6 @@ namespace atarabi {
 * AppAE
 */
 class AppAE : public IAppAE {
-private:
-	struct Getter {
-		uint32_t id;
-		std::string name;
-		ParameterType type;
-		ParameterValue initialValue;
-		std::vector<ParameterValue> values;
-	};
-
-	struct Setter {
-		uint32_t id;
-		std::string name;
-		ParameterType type;
-		std::vector<std::pair<int32_t, ParameterValue>> values;
-	};
-
 public:
 	static const int SERVER_PORT = 3000;
 	static const int CLIENT_PORT = 3001;
@@ -93,6 +77,8 @@ protected:
 	using IAppAE::setParameter;
 	void setParameter(const std::string &name, ParameterType type, ParameterValue value) override;
 
+	void setCameraParameter(const cinder::Camera &camera) override;
+
 	bool useFbo() const override;
 
 private:
@@ -117,6 +103,21 @@ private:
 		SETUP_ARG_SOURCETIME
 	};
 
+	struct Getter {
+		uint32_t id;
+		std::string name;
+		ParameterType type;
+		ParameterValue initialValue;
+		std::vector<ParameterValue> values;
+	};
+
+	struct Setter {
+		uint32_t id;
+		std::string name;
+		ParameterType type;
+		std::vector<std::pair<int32_t, ParameterValue>> values;
+	};
+
 	bool isParameterCached() const;
 	void transition(State state);
 	void setdown();
@@ -131,7 +132,8 @@ private:
 	cinder::gl::Fbo mMultisampleFbo;
 	cinder::gl::Fbo mNormalFbo;
 
-	std::vector<CameraAE::Parameter> mCameraParameters;
+	std::vector<CameraAE::Parameter> mCameraGetters;
+	std::vector<std::pair<int32_t, CameraAE::Parameter>> mCameraSetters;
 	std::map<std::string, Getter> mGetters;
 	std::map<std::string, Setter> mSetters;
 

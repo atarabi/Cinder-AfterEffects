@@ -205,6 +205,9 @@ protected:
 	void setParameter(const std::string &name, cinder::Vec3f value);
 	void setParameter(const std::string &name, cinder::Color value);
 
+	//! Sets the values of the camera which will be baked in After Effects after rendering images.
+	virtual void setCameraParameter(const cinder::Camera &camera) {}
+
 	//! Returns whether to use a fbo when rendering images.
 	virtual bool useFbo() const  { return false; }
 

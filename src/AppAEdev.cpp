@@ -214,6 +214,9 @@ ParameterValue AppAEdev::getParameter(const std::string &name, uint32_t) const
 		case ParameterType::Color:
 			return parameter.value.color;
 	}
+
+	assert(0);
+	return {};
 }
 
 CameraAE::Parameter AppAEdev::getCameraParameter(uint32_t) const
