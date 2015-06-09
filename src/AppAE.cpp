@@ -422,15 +422,6 @@ void AppAE::setdown()
 					reply.addFloatArg(orientation.y);
 					reply.addFloatArg(orientation.z);
 					reply.addFloatArg(zoom);
-
-					if (j == 0)
-					{
-						console() << "Frame: " << frame << std::endl;
-						console() << "Position: " << position << std::endl;
-						console() << "Camera: " << cameraMatrix << std::endl;
-						console() << "Orientation: " << orientation << std::endl;
-						console() << "Zoom: " << zoom << std::endl;
-					}
 				}
 
 				mSender.sendMessage(reply);
