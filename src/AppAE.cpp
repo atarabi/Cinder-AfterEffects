@@ -92,7 +92,7 @@ void addValueToMessage(cinder::osc::Message &message, ParameterType type, Parame
 	}
 }
 
-} //namespace
+} //anonymous namespace
 
 
 void AppAE::prepareSettings(Settings *settings)
@@ -243,7 +243,7 @@ CameraAE::Parameter AppAE::getCameraParameter(uint32_t frame) const
 	return mCameraGetters[frame];
 }
 
-void AppAE::setParameter(const std::string &name, ParameterType type, ParameterValue value)
+void AppAE::setParameter(const std::string &name, ParameterType type, ParameterValue value, uint32_t frame)
 {
 	assert(mState == State::Render);
 
@@ -252,7 +252,7 @@ void AppAE::setParameter(const std::string &name, ParameterType type, ParameterV
 		mSetters.insert(std::make_pair(name, Setter{ mSetters.size(), name, type }));
 	}
 
-	mSetters[name].values.push_back(std::make_pair(mCurrentFrame, value));
+	mSetters[name].values.push_back(std::make_pair(frame, value));
 }
 
 void AppAE::setCameraParameter(const cinder::Camera &camera)
@@ -443,6 +443,9 @@ void AppAE::setdown()
 			auto &name = setter->name;
 			ParameterType type = setter->type;
 			auto &values = setter->values;
+			std::sort(values.begin(), values.end(), [](const Setter::Value &lhs, const Setter::Value &rhs) -> bool {
+				return lhs.first < rhs.first;
+			});
 			int valueSize = static_cast<int>(values.size());
 			std::string prefix = "/cinder/setdown/" + name + "/";
 

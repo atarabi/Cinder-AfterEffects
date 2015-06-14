@@ -75,7 +75,7 @@ protected:
 	CameraAE::Parameter getCameraParameter(uint32_t frame) const override;
 
 	using IAppAE::setParameter;
-	void setParameter(const std::string &name, ParameterType type, ParameterValue value) override;
+	void setParameter(const std::string &name, ParameterType type, ParameterValue value, uint32_t frame) override;
 
 	void setCameraParameter(const cinder::Camera &camera) override;
 
@@ -104,18 +104,20 @@ private:
 	};
 
 	struct Getter {
+		using Value = ParameterValue;
 		uint32_t id;
 		std::string name;
 		ParameterType type;
 		ParameterValue initialValue;
-		std::vector<ParameterValue> values;
+		std::vector<Value> values;
 	};
 
 	struct Setter {
+		using Value = std::pair<int32_t, ParameterValue>;
 		uint32_t id;
 		std::string name;
 		ParameterType type;
-		std::vector<std::pair<int32_t, ParameterValue>> values;
+		std::vector<Value> values;
 	};
 
 	bool isParameterCached() const;

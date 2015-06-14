@@ -180,30 +180,36 @@ protected:
 
 	//! Adds a parameter(control effect) to After Effects(must be called in initializeAE()).
 	virtual void addParameter(const std::string &name, ParameterType type, ParameterValue initialValue) = 0;
-	void addParameter(const std::string &name, bool initialValue);
-	void addParameter(const std::string &name, float initialValue); 
-	void addParameter(const std::string &name, cinder::Vec2f initialValue);
-	void addParameter(const std::string &name, cinder::Vec3f initialValue);
-	void addParameter(const std::string &name, cinder::Color initialValue);
+	void addParameter(const std::string &name, bool initialValue) { addParameter(name, ParameterType::Checkbox, initialValue); }
+	void addParameter(const std::string &name, float initialValue) { addParameter(name, ParameterType::Slider, initialValue); }
+	void addParameter(const std::string &name, cinder::Vec2f initialValue){ addParameter(name, ParameterType::Point, initialValue); }
+	void addParameter(const std::string &name, cinder::Vec3f initialValue) { addParameter(name, ParameterType::Point3D, initialValue); }
+	void addParameter(const std::string &name, cinder::Color initialValue) { addParameter(name, ParameterType::Color, initialValue); }
 
 	//! Adds a "CameraAE" plugin to AfterEffects to get information about the camera used in AfterEffects.
 	void addCameraParameter() { mUseCamera = true; }
 
 	//! Returns the value of the added parameter.
 	virtual ParameterValue getParameter(const std::string &name, uint32_t frame) const = 0;
-	ParameterValue getParameter(const std::string &name) const;
+	ParameterValue getParameter(const std::string &name) const { return getParameter(name, getCurrentFrame()); }
 
 	//! Returns the value of the "CamerAE" plugin.
 	virtual CameraAE::Parameter getCameraParameter(uint32_t frame) const = 0;
-	CameraAE::Parameter getCameraParameter() const;
+	CameraAE::Parameter getCameraParameter() const { return getCameraParameter(getCurrentFrame()); }
 
 	//! Sets the value of the parameter which will be baked in After Effects after rendering images.
-	virtual void setParameter(const std::string &name, ParameterType type, ParameterValue value) {}
-	void setParameter(const std::string &name, bool value);
-	void setParameter(const std::string &name, float value);
-	void setParameter(const std::string &name, cinder::Vec2f value);
-	void setParameter(const std::string &name, cinder::Vec3f value);
-	void setParameter(const std::string &name, cinder::Color value);
+	virtual void setParameter(const std::string &name, ParameterType type, ParameterValue value, uint32_t frame) {}
+	void setParameter(const std::string &name, ParameterType type, ParameterValue value) { setParameter(name, type, value, getCurrentFrame()); }
+	void setParameter(const std::string &name, bool value, uint32_t frame) { setParameter(name, ParameterType::Checkbox, value, frame); }
+	void setParameter(const std::string &name, bool value) { setParameter(name, ParameterType::Checkbox, value, getCurrentFrame()); }
+	void setParameter(const std::string &name, float value, uint32_t frame) { setParameter(name, ParameterType::Slider, value, frame); }
+	void setParameter(const std::string &name, float value) { setParameter(name, ParameterType::Slider, value, getCurrentFrame()); }
+	void setParameter(const std::string &name, cinder::Vec2f value, uint32_t frame) { setParameter(name, ParameterType::Point, value, frame); }
+	void setParameter(const std::string &name, cinder::Vec2f value) { setParameter(name, ParameterType::Point, value, getCurrentFrame()); }
+	void setParameter(const std::string &name, cinder::Vec3f value, uint32_t frame) { setParameter(name, ParameterType::Point3D, value, frame); }
+	void setParameter(const std::string &name, cinder::Vec3f value) { setParameter(name, ParameterType::Point3D, value, getCurrentFrame()); }
+	void setParameter(const std::string &name, cinder::Color value, uint32_t frame) { setParameter(name, ParameterType::Color, value, frame); }
+	void setParameter(const std::string &name, cinder::Color value) { setParameter(name, ParameterType::Color, value, getCurrentFrame()); }
 
 	//! Sets the values of the camera which will be baked in After Effects after rendering images.
 	virtual void setCameraParameter(const cinder::Camera &camera) {}
@@ -219,64 +225,4 @@ private:
 
 };
 
-inline void IAppAE::addParameter(const std::string &name, bool initialValue)
-{
-	addParameter(name, ParameterType::Checkbox, initialValue);
-}
-
-inline void IAppAE::addParameter(const std::string &name, float initialValue)
-{
-	addParameter(name, ParameterType::Slider, initialValue);
-}
-
-inline void IAppAE::addParameter(const std::string &name, cinder::Vec2f initialValue)
-{
-	addParameter(name, ParameterType::Point, initialValue);
-}
-
-inline void IAppAE::addParameter(const std::string &name, cinder::Vec3f initialValue)
-{
-	addParameter(name, ParameterType::Point3D, initialValue);
-}
-
-inline void IAppAE::addParameter(const std::string &name, cinder::Color initialValue)
-{
-	addParameter(name, ParameterType::Color, initialValue);
-}
-
-inline ParameterValue IAppAE::getParameter(const std::string &name) const
-{
-	return getParameter(name, getCurrentFrame());
-}
-
-inline CameraAE::Parameter IAppAE::getCameraParameter() const
-{
-	return getCameraParameter(getCurrentFrame());
-}
-
-inline void IAppAE::setParameter(const std::string &name, bool value)
-{
-	setParameter(name, ParameterType::Checkbox, value);
-}
-
-inline void IAppAE::setParameter(const std::string &name, float value)
-{
-	setParameter(name, ParameterType::Slider, value);
-}
-
-inline void IAppAE::setParameter(const std::string &name, cinder::Vec2f value)
-{
-	setParameter(name, ParameterType::Point, value);
-}
-
-inline void IAppAE::setParameter(const std::string &name, cinder::Vec3f value)
-{
-	setParameter(name, ParameterType::Point3D, value);
-}
-
-inline void IAppAE::setParameter(const std::string &name, cinder::Color value)
-{
-	setParameter(name, ParameterType::Color, value);
-}
-
-}
+} //namespace atarabi
