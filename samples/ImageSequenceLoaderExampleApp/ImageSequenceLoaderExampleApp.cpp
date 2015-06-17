@@ -1,4 +1,5 @@
 #include "CinderAfterEffects.h"
+#include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
 
 using namespace ci;
@@ -14,8 +15,10 @@ public:
 	void drawAE() override;
 
 private:
+	Color color_;
+	
 	ImageSequenceLoader loader_;
-	gl::Texture texture_;
+	gl::TextureRef texture_;
 };
 
 void ImageSequenceLoaderExampleApp::initializeAE()
@@ -33,23 +36,26 @@ void ImageSequenceLoaderExampleApp::setupAE()
 
 void ImageSequenceLoaderExampleApp::updateAE()
 {
+	color_ = getParameter("Color");
+
 	if (!loader_.empty())
 	{
 		uint32_t frame = getCurrentFrame();
-		texture_ = loader_.getImage(frame);
+		texture_ = gl::Texture::create(loader_.getImage(frame));
 	}
 }
 
 void ImageSequenceLoaderExampleApp::drawAE()
 {
-	gl::clear(Color(0, 0, 0));
-
-	if (texture_)
-	{
-		Color color = getParameter("Color");
-		gl::color(color);
-		gl::draw(texture_);
-	}
+	gl::clear(ColorA(0, 0, 0, 0));
+	gl::color(color_);
+	gl::draw(texture_);
 }
 
-CINDER_APP_NATIVE(ImageSequenceLoaderExampleApp, RendererGl)
+CINDER_APP(ImageSequenceLoaderExampleApp, RendererGl(RendererGl::Options().msaa(16)), [](App::Settings* settings)
+{
+	settings->setWindowSize(1280, 720);
+	settings->setFrameRate(30.0f);
+	settings->setResizable(false);
+	settings->setFullScreen(false); 
+})

@@ -27,17 +27,9 @@
 
 namespace atarabi {
 
-void AppAEdev::prepareSettings(Settings *settings)
-{
-	settings->setWindowSize(mWidth, mHeight);
-	settings->setFrameRate(mFps);
-	settings->setResizable(false);
-	settings->setFullScreen(false);
-}
-
 void AppAEdev::setup()
 {
-	mParams = cinder::params::InterfaceGl::create("Parameters", cinder::Vec2i(200, 160));
+	mParams = cinder::params::InterfaceGl::create("Parameters", { 200, 160 });
 
 	initializeAE();
 
@@ -61,9 +53,9 @@ void AppAEdev::setupParams()
 	if (mUseCamera)
 	{
 		mFov = 22.9f;
-		mEye = cinder::Vec3f{ 0.5f * getWidth(), 0.5f * getHeight(), -1777.7778f };
-		mTarget = cinder::Vec3f{ 0.5f * getWidth(), 0.5f * getHeight(), 0.f };
-		mUp = -cinder::Vec3f::yAxis();
+		mEye = cinder::vec3{ 0.5f * getWidth(), 0.5f * getHeight(), -1777.7778f };
+		mTarget = cinder::vec3{ 0.5f * getWidth(), 0.5f * getHeight(), 0.f };
+		mUp = cinder::vec3{0.f, -1.f, 0.f};
 		updateCamera();
 
 		std::function<void()> updateCamera = std::bind(&AppAEdev::updateCamera, this);
@@ -175,13 +167,13 @@ void AppAEdev::addParameter(const std::string &name, ParameterType type, Paramet
 				break;
 			case ParameterType::Point:
 				parameter.value.point = initialValue;
-				parameter.value.point *= cinder::Vec2f{ static_cast<float>(DEFAULT_WIDTH), static_cast<float>(DEFAULT_HEIGHT) };
+				parameter.value.point *= cinder::vec2{ static_cast<float>(DEFAULT_WIDTH), static_cast<float>(DEFAULT_HEIGHT) };
 				mParams->addParam(name + " x", &parameter.value.point.x);
 				mParams->addParam(name + " y", &parameter.value.point.y);
 				break;
 			case ParameterType::Point3D:
 				parameter.value.point3d = initialValue;
-				parameter.value.point3d *= cinder::Vec3f{ static_cast<float>(DEFAULT_WIDTH), static_cast<float>(DEFAULT_HEIGHT), static_cast<float>(DEFAULT_WIDTH) };
+				parameter.value.point3d *= cinder::vec3{ static_cast<float>(DEFAULT_WIDTH), static_cast<float>(DEFAULT_HEIGHT), static_cast<float>(DEFAULT_WIDTH) };
 				mParams->addParam(name + " x", &parameter.value.point3d.x);
 				mParams->addParam(name + " y", &parameter.value.point3d.y);
 				mParams->addParam(name + " z", &parameter.value.point3d.z);
@@ -222,8 +214,8 @@ ParameterValue AppAEdev::getParameter(const std::string &name, uint32_t) const
 CameraAE::Parameter AppAEdev::getCameraParameter(uint32_t) const
 {
 	float fov = mCamera.getFov();
-	cinder::Matrix44f cameraMatrix = mCamera.getModelViewMatrix().affineInverted();
-	cameraMatrix.scale(cinder::Vec3f{ 1.f, -1.f, -1.f });
+	cinder::mat4 cameraMatrix = cinder::inverse(mCamera.getViewMatrix());
+	cameraMatrix = cinder::scale(cameraMatrix, cinder::vec3{1.f, -1.f, -1.f});
 	return{ fov, cameraMatrix };
 }
 

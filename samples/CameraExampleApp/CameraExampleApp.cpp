@@ -1,4 +1,5 @@
 #include "CinderAfterEffects.h"
+#include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
 
 using namespace ci;
@@ -14,13 +15,23 @@ public:
 	void drawAE() override;
 
 private:
+	gl::BatchRef sphere_;
+
 	CameraAE camera_;
+	Color color_;
+	vec3 position_;
+	float size_;
 };
 
 void CameraExampleApp::initializeAE()
 {
+	//create a sphere
+	gl::GlslProgRef shader = gl::context()->getStockShader(gl::ShaderDef().color());
+	sphere_ = gl::Batch::create(geom::Sphere().radius(1.f).subdivisions(60), shader);
+
+	//add parameters
 	addCameraParameter();
-	addParameter("Position", Vec3f{0.5f, 0.5f, 0.f});
+	addParameter("Position", vec3{ 0.5f, 0.5f, 0.f });
 	addParameter("Color", Color{ 1.f, 0.f, 0.f });
 	addParameter("Size", 50.f);
 }
@@ -33,17 +44,31 @@ void CameraExampleApp::setupAE()
 void CameraExampleApp::updateAE()
 {
 	camera_.setParameter(getCameraParameter());
-	gl::setMatrices(camera_);
+	position_ = getParameter("Position");
+	color_ = getParameter("Color");
+	size_ = getParameter("Size");
 }
 
 void CameraExampleApp::drawAE()
 {
 	gl::clear(ColorA(0, 0, 0, 0));
-	Color color = getParameter("Color");
-	gl::color(color);
-	Vec3f position = getParameter("Position");
-	float size = getParameter("Size");
-	gl::drawCube(position, {size, size, size});
+
+	gl::ScopedViewMatrix scoped_view_matrix;
+	gl::setMatrices(camera_);
+
+	gl::ScopedColor scoped_color{ color_ };
+
+	gl::ScopedModelMatrix scoped_model_matrix;
+	gl::translate(position_);
+	gl::scale(vec3{ size_ });
+
+	sphere_->draw();
 }
 
-CINDER_APP_NATIVE(CameraExampleApp, RendererGl)
+CINDER_APP(CameraExampleApp, RendererGl(RendererGl::Options().msaa(16)), [](App::Settings* settings)
+{
+	settings->setWindowSize(1280, 720);
+	settings->setFrameRate(30.0f);
+	settings->setResizable(false);
+	settings->setFullScreen(false); 
+})

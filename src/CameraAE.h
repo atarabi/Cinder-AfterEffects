@@ -33,7 +33,7 @@ class CameraAE : public cinder::CameraPersp {
 public:
 	struct Parameter {
 		float fov;
-		cinder::Matrix44f cameraMatrix;
+		cinder::mat4 cameraMatrix;
 	};
 
 	void setParameter(const Parameter &parameter)
@@ -43,11 +43,10 @@ public:
 		auto &cameraMatrix = parameter.cameraMatrix;
 
 		mInverseModelViewMatrix = cameraMatrix;
-
-		mInverseModelViewMatrix.scale(cinder::Vec3f{1.f, -1.f, -1.f});
+		mInverseModelViewMatrix = cinder::scale(cameraMatrix, cinder::vec3{ 1.f, -1.f, -1.f });
 		mInverseModelViewCached = true;
 
-		mModelViewMatrix = mInverseModelViewMatrix.affineInverted();
+		mViewMatrix = cinder::inverse(mInverseModelViewMatrix);
 		mModelViewCached = true;
 	}
 };

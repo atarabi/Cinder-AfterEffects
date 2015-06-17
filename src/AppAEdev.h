@@ -42,8 +42,8 @@ private:
 		struct Value {
 			bool checkbox;
 			float slider;
-			cinder::Vec2f point;
-			cinder::Vec3f point3d;
+			cinder::vec2 point;
+			cinder::vec3 point3d;
 			cinder::Color color;
 		};
 		std::string name;
@@ -52,7 +52,6 @@ private:
 	};
 
 public:
-	void prepareSettings(Settings *settings) final;
 	void setup() final;
 	void update() final;
 	void draw() final;
@@ -71,7 +70,7 @@ protected:
 
 	int getWidth() const override { return getWindowWidth(); }
 	int getHeight() const override { return getWindowHeight(); }
-	cinder::Vec2i getSize() const override { return getWindowSize(); };
+	cinder::ivec2 getSize() const override { return getWindowSize(); };
 
 	std::string getSourcePath() const override { return mSourcePath; }
 	float getSourceTime() const override { return mSourceTime; }
@@ -96,9 +95,9 @@ private:
 
 	cinder::CameraPersp mCamera;
 	float mFov;
-	cinder::Vec3f mEye;
-	cinder::Vec3f mTarget;
-	cinder::Vec3f mUp;
+	cinder::vec3 mEye;
+	cinder::vec3 mTarget;
+	cinder::vec3 mUp;
 	cinder::params::InterfaceGlRef mParams;
 	std::map<std::string, Parameter> mParameters;
 

@@ -95,14 +95,6 @@ void addValueToMessage(cinder::osc::Message &message, ParameterType type, Parame
 } //anonymous namespace
 
 
-void AppAE::prepareSettings(Settings *settings)
-{
-	settings->setWindowSize(1280, 720);
-	settings->setFrameRate(30.0f);
-	settings->setResizable(false);
-	settings->setFullScreen(false);
-}
-
 void AppAE::setup()
 {
 	mPath = cinder::getHomeDirectory().string();
@@ -118,7 +110,17 @@ void AppAE::update()
 	if (mState == State::Render)
 	{
 		timelineAE().stepTo(getCurrentTime());
-		updateAE();
+
+		if (useFbo())
+		{
+			cinder::gl::ScopedFramebuffer scopedFrameBuffer{ mFbo };
+			updateAE();
+		}
+		else
+		{
+			cinder::gl::ScopedFramebuffer scopedFrameBuffer{ GL_FRAMEBUFFER, 0 };
+			updateAE();
+		}
 	}
 }
 
@@ -130,13 +132,14 @@ void AppAE::draw()
 		{
 			if (useFbo())
 			{
-				mMultisampleFbo.bindFramebuffer();
+				cinder::gl::ScopedFramebuffer scopedFrameBuffer{ mFbo };
+				drawAE();
 			}
 			else
 			{
-				mMultisampleFbo.unbindFramebuffer();
+				cinder::gl::ScopedFramebuffer scopedFrameBuffer{ GL_FRAMEBUFFER, 0 };
+				drawAE();
 			}
-			drawAE();
 		}
 
 		//write
@@ -212,7 +215,7 @@ void AppAE::addParameter(const std::string &name, ParameterType type, ParameterV
 
 	if (mGetters.count(name) == 0)
 	{
-		mGetters.insert(std::make_pair(name, Getter{ mGetters.size(), name, type, initialValue }));
+		mGetters.insert(std::make_pair(name, Getter{ static_cast<uint32_t>(mGetters.size()), name, type, initialValue }));
 	}
 }
 
@@ -249,7 +252,7 @@ void AppAE::setParameter(const std::string &name, ParameterType type, ParameterV
 
 	if (mSetters.count(name) == 0)
 	{
-		mSetters.insert(std::make_pair(name, Setter{ mSetters.size(), name, type }));
+		mSetters.insert(std::make_pair(name, Setter{ static_cast<uint32_t>(mSetters.size()), name, type }));
 	}
 
 	mSetters[name].values.push_back(std::make_pair(frame, value));
@@ -259,7 +262,7 @@ void AppAE::setCameraParameter(const cinder::Camera &camera)
 {
 	assert(mState == State::Render);
 
-	mCameraSetters.push_back(std::make_pair(mCurrentFrame, CameraAE::Parameter{ camera.getFov(), camera.getInverseModelViewMatrix() }));
+	mCameraSetters.push_back(std::make_pair(mCurrentFrame, CameraAE::Parameter{ camera.getFov(), camera.getInverseViewMatrix() }));
 }
 
 bool AppAE::useFbo() const
@@ -310,13 +313,10 @@ void AppAE::transition(State state)
 			if (useFbo())
 			{
 				setWindowSize({ 640, 360 });
-				mNormalFbo = cinder::gl::Fbo(mWidth, mHeight);
-				cinder::gl::Fbo::Format format;
-				format.setSamples(16);
-				mMultisampleFbo = cinder::gl::Fbo(mWidth, mHeight, format);
-				cinder::gl::setViewport(mNormalFbo.getBounds());
-				cinder::gl::setMatricesWindow(mNormalFbo.getSize());
-				mMultisampleFbo.bindFramebuffer();
+				mFbo = cinder::gl::Fbo::create(mWidth, mHeight, cinder::gl::Fbo::Format{}.samples(16));
+				auto area = mFbo->getBounds();
+				cinder::gl::viewport(std::make_pair(cinder::ivec2{ 0, 0 }, area.getSize()));
+				cinder::gl::setMatricesWindow(mFbo->getSize());
 			}
 			else
 			{
@@ -380,29 +380,29 @@ void AppAE::setdown()
 					auto &value = pair.second;
 					float fov = cinder::toRadians(value.fov);
 					auto cameraMatrix = value.cameraMatrix;
-					cameraMatrix.scale(cinder::Vec3f{ 1.f, -1.f, -1.f });
+					cameraMatrix = cinder::scale(cameraMatrix, cinder::vec3{ 1.f, -1.f, -1.f });
 
 					//calc position
-					cinder::Vec3f position{cameraMatrix.at(0, 3), cameraMatrix.at(1, 3), cameraMatrix.at(2, 3)};
+					cinder::vec3 position{ cameraMatrix[0][3], cameraMatrix[1][3], cameraMatrix[2][3] };
 
 					//calc orientation
-					cinder::Vec3f orientation{};
+					cinder::vec3 orientation{};
 					{
-						orientation.y = std::asin(cameraMatrix.at(0, 2));
+						orientation.y = std::asin(cameraMatrix[0][2]);
 
 						float cosY = std::cos(orientation.y);
 						if (cosY != 0.f)
 						{
-							orientation.x = std::atan2(-cameraMatrix.at(1, 2), cameraMatrix.at(2, 2));
-							orientation.z = std::asin(-cameraMatrix.at(0, 1) / cosY);
-							if (cameraMatrix.at(0, 0) < 0.f)
+							orientation.x = std::atan2(-cameraMatrix[1][2], cameraMatrix[2][2]);
+							orientation.z = std::asin(-cameraMatrix[0][1] / cosY);
+							if (cameraMatrix[0][0] < 0.f)
 							{
-								orientation.z = static_cast<float>(M_PI) - orientation.z;
+								orientation.z = static_cast<float>(M_PI)-orientation.z;
 							}
 						}
 						else
 						{
-							orientation.x = std::atan2(cameraMatrix.at(2, 1), cameraMatrix.at(1, 1));
+							orientation.x = std::atan2(cameraMatrix[2][1], cameraMatrix[1][1]);
 							orientation.y = 0.5f * static_cast<float>(M_PI);
 							orientation.z = 0.f;
 						}
@@ -488,7 +488,7 @@ void AppAE::setdown()
 		reply.addStringArg(sequencePath);
 
 		//executable path
-		auto &argv = getArgs();
+		auto &argv = getCommandLineArgs();
 		cinder::fs::path executablePath = cinder::fs::system_complete(argv[0]);
 		reply.addStringArg(executablePath.string());
 
@@ -653,7 +653,7 @@ void AppAE::processPrerenderMessage(const cinder::osc::Message &message, const s
 			for (int i = 0; i < argNum; i += 13)
 			{
 				float fov = message.getArgAsFloat(i);
-				cinder::Matrix44f matrix{
+				cinder::mat4 matrix{
 					message.getArgAsFloat(i + 1), message.getArgAsFloat(i + 2), message.getArgAsFloat(i + 3), 0.f,
 					message.getArgAsFloat(i + 4), message.getArgAsFloat(i + 5), message.getArgAsFloat(i + 6), 0.f,
 					message.getArgAsFloat(i + 7), message.getArgAsFloat(i + 8), message.getArgAsFloat(i + 9), 0.f,
@@ -754,31 +754,32 @@ void AppAE::processPrerenderMessage(const cinder::osc::Message &message, const s
 void AppAE::writeImage()
 {
 	std::string path = mPath + "/" + mFileName + "_" + zfill(mCurrentFrame, 5) + ".png";
-	int width;
-	int height;
 
 	if (useFbo())
 	{
-		mMultisampleFbo.blitTo(mNormalFbo, mMultisampleFbo.getBounds(), mNormalFbo.getBounds());
-		mNormalFbo.bindFramebuffer();
-		width = mWidth;
-		height = mHeight;
+		cinder::Surface surface = mFbo->readPixels8u(mFbo->getBounds());
+
+		mWriter.pushImage(path, surface);
 	}
 	else
 	{
-		mMultisampleFbo.unbindFramebuffer();
-		width = getWindowWidth();
-		height = getWindowHeight();
+		cinder::gl::ScopedFramebuffer scopedFrameBuffer{ GL_FRAMEBUFFER, 0 };
+
+		int width = getWindowWidth();
+		int height = getWindowHeight();
+
+		cinder::Surface surface{ width, height, true };
+		glFlush();
+		GLint oldPackAlignment;
+		glGetIntegerv(GL_PACK_ALIGNMENT, &oldPackAlignment);
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
+		glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, surface.getData());
+		glPixelStorei(GL_PACK_ALIGNMENT, oldPackAlignment);
+
+		mWriter.pushImage(path, surface);
 	}
 
-	cinder::Surface surface{ width, height, true };
-	glFlush();
-	GLint oldPackAlignment;
-	glGetIntegerv(GL_PACK_ALIGNMENT, &oldPackAlignment);
-	glPixelStorei(GL_PACK_ALIGNMENT, 1);
-	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, surface.getData());
-	glPixelStorei(GL_PACK_ALIGNMENT, oldPackAlignment);
-	mWriter.pushImage(path, surface);
+
 }
 
 } //namespace atarabi

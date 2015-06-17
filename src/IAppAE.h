@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "cinder/app/AppNative.h"
+#include "cinder/app/App.h"
 #include "cinder/Timeline.h"
 #include "cinder/Vector.h"
 #include "cinder/Color.h"
@@ -90,25 +90,25 @@ union ParameterValue {
 		return slider.value;
 	}
 
-	ParameterValue(cinder::Vec2f value)
+	ParameterValue(cinder::vec2 value)
 	{
 		point.x = value.x;
 		point.y = value.y;
 	}
 
-	operator cinder::Vec2f() const
+	operator cinder::vec2() const
 	{
 		return{ point.x, point.y };
 	}
 
-	ParameterValue(const cinder::Vec3f& value)
+	ParameterValue(const cinder::vec3& value)
 	{
 		point3d.x = value.x;
 		point3d.y = value.y;
 		point3d.z = value.z;
 	}
 
-	operator cinder::Vec3f() const
+	operator cinder::vec3() const
 	{
 		return{ point3d.x, point3d.y, point3d.z };
 	}
@@ -129,7 +129,7 @@ union ParameterValue {
 /*
 * AppAE Interface Class
 */
-class IAppAE : public cinder::app::AppNative {
+class IAppAE : public cinder::app::App {
 public:
 	IAppAE() : mTimelineAE{ cinder::Timeline::create() } {}
 
@@ -171,7 +171,7 @@ protected:
 	//! Returns the height of the layer.
 	virtual int getHeight() const = 0;
 	//! Returns the size of the layer.
-	virtual cinder::Vec2i getSize() const = 0;
+	virtual cinder::ivec2 getSize() const = 0;
 
 	//! Returns the path of the selected AV layer's source(it can be empty).
 	virtual std::string getSourcePath() const = 0;
@@ -182,8 +182,8 @@ protected:
 	virtual void addParameter(const std::string &name, ParameterType type, ParameterValue initialValue) = 0;
 	void addParameter(const std::string &name, bool initialValue) { addParameter(name, ParameterType::Checkbox, initialValue); }
 	void addParameter(const std::string &name, float initialValue) { addParameter(name, ParameterType::Slider, initialValue); }
-	void addParameter(const std::string &name, cinder::Vec2f initialValue){ addParameter(name, ParameterType::Point, initialValue); }
-	void addParameter(const std::string &name, cinder::Vec3f initialValue) { addParameter(name, ParameterType::Point3D, initialValue); }
+	void addParameter(const std::string &name, cinder::vec2 initialValue){ addParameter(name, ParameterType::Point, initialValue); }
+	void addParameter(const std::string &name, cinder::vec3 initialValue) { addParameter(name, ParameterType::Point3D, initialValue); }
 	void addParameter(const std::string &name, cinder::Color initialValue) { addParameter(name, ParameterType::Color, initialValue); }
 
 	//! Adds a "CameraAE" plugin to AfterEffects to get information about the camera used in AfterEffects.
@@ -204,10 +204,10 @@ protected:
 	void setParameter(const std::string &name, bool value) { setParameter(name, ParameterType::Checkbox, value, getCurrentFrame()); }
 	void setParameter(const std::string &name, float value, uint32_t frame) { setParameter(name, ParameterType::Slider, value, frame); }
 	void setParameter(const std::string &name, float value) { setParameter(name, ParameterType::Slider, value, getCurrentFrame()); }
-	void setParameter(const std::string &name, cinder::Vec2f value, uint32_t frame) { setParameter(name, ParameterType::Point, value, frame); }
-	void setParameter(const std::string &name, cinder::Vec2f value) { setParameter(name, ParameterType::Point, value, getCurrentFrame()); }
-	void setParameter(const std::string &name, cinder::Vec3f value, uint32_t frame) { setParameter(name, ParameterType::Point3D, value, frame); }
-	void setParameter(const std::string &name, cinder::Vec3f value) { setParameter(name, ParameterType::Point3D, value, getCurrentFrame()); }
+	void setParameter(const std::string &name, cinder::vec2 value, uint32_t frame) { setParameter(name, ParameterType::Point, value, frame); }
+	void setParameter(const std::string &name, cinder::vec2 value) { setParameter(name, ParameterType::Point, value, getCurrentFrame()); }
+	void setParameter(const std::string &name, cinder::vec3 value, uint32_t frame) { setParameter(name, ParameterType::Point3D, value, frame); }
+	void setParameter(const std::string &name, cinder::vec3 value) { setParameter(name, ParameterType::Point3D, value, getCurrentFrame()); }
 	void setParameter(const std::string &name, cinder::Color value, uint32_t frame) { setParameter(name, ParameterType::Color, value, frame); }
 	void setParameter(const std::string &name, cinder::Color value) { setParameter(name, ParameterType::Color, value, getCurrentFrame()); }
 
@@ -225,4 +225,4 @@ private:
 
 };
 
-} //namespace atarabi
+}

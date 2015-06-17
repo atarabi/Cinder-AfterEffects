@@ -41,7 +41,6 @@ public:
 	static const int SERVER_PORT = 3000;
 	static const int CLIENT_PORT = 3001;
 
-	void prepareSettings(Settings *settings) final;
 	void setup() final;
 	void update() final;
 	void draw() final;
@@ -60,7 +59,7 @@ protected:
 
 	int getWidth() const override { return mWidth; }
 	int getHeight() const override { return mHeight; }
-	cinder::Vec2i getSize() const override { return useFbo() ? cinder::Vec2i{ getWidth(), getHeight() } : getWindowSize(); };
+	cinder::ivec2 getSize() const override { return useFbo() ? cinder::ivec2{ getWidth(), getHeight() } : getWindowSize(); };
 
 	std::string getSourcePath() const override { return mSourcePath; }
 	float getSourceTime() const override { return mSourceTime; }
@@ -131,8 +130,7 @@ private:
 	State mState = State::Uninitialized;
 	uint32_t mCurrentFrame = 0;
 
-	cinder::gl::Fbo mMultisampleFbo;
-	cinder::gl::Fbo mNormalFbo;
+	cinder::gl::FboRef mFbo;
 
 	std::vector<CameraAE::Parameter> mCameraGetters;
 	std::vector<std::pair<int32_t, CameraAE::Parameter>> mCameraSetters;

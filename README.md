@@ -10,7 +10,7 @@ Include a header file.
 #include "CinderAfterEffects.h"
 ```
 
-Create your own app class which inherits from `atarabi::AppAE` instead of `cinder::app::AppNative` and override virtual functions if necessary.
+Create your own app class which inherits from `atarabi::AppAE` instead of `cinder::app::App` and override virtual functions if necessary.
 
 ```
 class YourApp : public atarabi::AppAE {
@@ -29,8 +29,8 @@ void YourApp::initializeAE()
 {
 	addParameter("Checkbox", false);
 	addParameter("Slider", 0.f);
-	addParameter("Point", cinder::Vec2f(0.5f, 0.5f));
-	addParameter("Point3D", cinder::Vec3f(0.5f, 0.5f, 0.f));
+	addParameter("Point", cinder::vec2(0.5f, 0.5f));
+	addParameter("Point3D", cinder::vec3(0.5f, 0.5f, 0.f));
 	addParameter("Color", cinder::Color(1.f, 0.f, 0.f));
 }
 ```
@@ -42,8 +42,8 @@ void YourApp::updateAE()
 {
 	bool checkbox_value = getParameter("Checkbox");
 	float slider_value = getParameter("Slider");
-	cinder::Vec2f point_value = getParameter("Point");
-	cinder::Vec3f point3d_value = getParameter("Point3D");
+	cinder::vec2 point_value = getParameter("Point");
+	cinder::vec3 point3d_value = getParameter("Point3D");
 	cinder::Color color_value = getParameter("Color");
 }
 ```
@@ -56,9 +56,9 @@ class YourAppDev : public atarabi::AppAEdev {
 };
 ```
 
-### Differences between AppNative and AppAE 
+### Differences between App and AppAE 
 
-|AppNative|AppAE|
+|App|AppAE|
 |:-:|:-:|
 |-|initializeAE|
 |setup|setupAE|
@@ -79,7 +79,7 @@ Cinder-OSC
 
 ## Compatibility
 
-Cinder 0.8.6
+Cinder 0.9.0
 
 ## License
 

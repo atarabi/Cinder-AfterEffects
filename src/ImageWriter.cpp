@@ -72,7 +72,7 @@ void ImageWriter::writeImage()
 		cinder::fs::path path = image.path();
 		auto &surface = image.surface();
 
-		if (surface)
+		if (surface.getDataStore())
 		{
 			try
 			{
