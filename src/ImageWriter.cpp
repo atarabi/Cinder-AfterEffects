@@ -25,15 +25,16 @@
 #include "ImageWriter.h"
 #include "cinder/ImageIo.h"
 #include "cinder/ip/Flip.h"
+#include "cinder/ip/Premultiply.h"
 
 namespace atarabi {
 
-ImageWriter::ImageWriter() : mAbort{ false }, mImages{ DEFAULT_BUFFER_SIZE }
+ImageWriter::ImageWriter() : mUnpremultiply{ false }, mAbort{ false }, mImages{ DEFAULT_BUFFER_SIZE }
 {
 	initThread();
 }
 
-ImageWriter::ImageWriter(std::size_t buffer_size) : mAbort{ false }, mImages{ buffer_size }
+ImageWriter::ImageWriter(std::size_t buffer_size) : mUnpremultiply{ false }, mAbort{ false }, mImages{ buffer_size }
 {
 	initThread();
 }
@@ -76,6 +77,10 @@ void ImageWriter::writeImage()
 		{
 			try
 			{
+				if (mUnpremultiply)
+				{
+					cinder::ip::unpremultiply(&surface);
+				}
 				cinder::ip::flipVertical(&surface);
 				cinder::writeImage(path, surface);
 			}

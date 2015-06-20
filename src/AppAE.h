@@ -81,6 +81,8 @@ protected:
 
 	bool useFbo() const override;
 
+	void setUnmultiply(bool unmultiply) override { mWriter.setUnpremultiply(unmultiply); }
+
 private:
 	enum class State {
 		Uninitialized,

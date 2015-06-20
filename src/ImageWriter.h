@@ -53,6 +53,8 @@ public:
 
 	~ImageWriter();
 
+	void setUnpremultiply(bool unpremultiply) { mUnpremultiply = unpremultiply; }
+
 	void pushImage(const std::string &path, const cinder::Surface &surface);
 	bool empty();
 
@@ -62,6 +64,7 @@ private:
 
 	std::shared_ptr<std::thread> mThread;
 	cinder::ConcurrentCircularBuffer<Image> mImages;
+	bool mUnpremultiply;
 	bool mAbort;
 };
 
