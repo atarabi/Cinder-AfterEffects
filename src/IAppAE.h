@@ -217,6 +217,9 @@ protected:
 	//! Returns whether to use a fbo when rendering images.
 	virtual bool useFbo() const  { return false; }
 
+	//! Decides whether to unpremultiply surface or not when writing out an image sequence.
+	virtual void setUnmultiply(bool unmultiply) {}
+
 protected:
 	bool mUseCamera = false;
 
