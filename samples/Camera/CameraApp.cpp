@@ -7,7 +7,7 @@ using namespace ci::app;
 using namespace std;
 using namespace atarabi;
 
-class CameraExampleApp : public AppAE {
+class CameraApp : public AppAE {
 public:
 	void initializeAE() override;
 	void setupAE() override;
@@ -23,7 +23,7 @@ private:
 	float size_;
 };
 
-void CameraExampleApp::initializeAE()
+void CameraApp::initializeAE()
 {
 	//create a sphere
 	gl::GlslProgRef shader = gl::context()->getStockShader(gl::ShaderDef().color());
@@ -36,12 +36,12 @@ void CameraExampleApp::initializeAE()
 	addParameter("Size", 50.f);
 }
 
-void CameraExampleApp::setupAE()
+void CameraApp::setupAE()
 {
 	camera_.setPerspective(60.f, static_cast<float>(getWidth()) / static_cast<float>(getHeight()), 5.f, 5000.f);
 }
 
-void CameraExampleApp::updateAE()
+void CameraApp::updateAE()
 {
 	camera_.setParameter(getCameraParameter());
 	position_ = getParameter("Position");
@@ -49,7 +49,7 @@ void CameraExampleApp::updateAE()
 	size_ = getParameter("Size");
 }
 
-void CameraExampleApp::drawAE()
+void CameraApp::drawAE()
 {
 	gl::clear(ColorA(0, 0, 0, 0));
 
@@ -65,7 +65,7 @@ void CameraExampleApp::drawAE()
 	sphere_->draw();
 }
 
-CINDER_APP(CameraExampleApp, RendererGl(RendererGl::Options().msaa(16)), [](App::Settings* settings)
+CINDER_APP(CameraApp, RendererGl(RendererGl::Options().msaa(16)), [](App::Settings* settings)
 {
 	settings->setWindowSize(1280, 720);
 	settings->setFrameRate(30.0f);

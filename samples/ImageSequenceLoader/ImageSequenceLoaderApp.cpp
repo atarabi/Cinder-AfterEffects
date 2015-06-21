@@ -7,7 +7,7 @@ using namespace ci::app;
 using namespace std;
 using namespace atarabi;
 
-class ImageSequenceLoaderExampleApp : public AppAE {
+class ImageSequenceLoaderApp : public AppAE {
 public:
 	void initializeAE() override;
 	void setupAE() override;
@@ -21,20 +21,20 @@ private:
 	gl::TextureRef texture_;
 };
 
-void ImageSequenceLoaderExampleApp::initializeAE()
+void ImageSequenceLoaderApp::initializeAE()
 {
 	addParameter("Color", Color{ 1.f, 0.5f, 0.5f });
 	loader_.setLoop(true);
 }
 
-void ImageSequenceLoaderExampleApp::setupAE()
+void ImageSequenceLoaderApp::setupAE()
 {
 	//the selected AV layer's source must be an image sequence.
 	loader_.load(getSourcePath());
 	texture_.reset();
 }
 
-void ImageSequenceLoaderExampleApp::updateAE()
+void ImageSequenceLoaderApp::updateAE()
 {
 	color_ = getParameter("Color");
 
@@ -45,14 +45,14 @@ void ImageSequenceLoaderExampleApp::updateAE()
 	}
 }
 
-void ImageSequenceLoaderExampleApp::drawAE()
+void ImageSequenceLoaderApp::drawAE()
 {
 	gl::clear(ColorA(0, 0, 0, 0));
 	gl::color(color_);
 	gl::draw(texture_);
 }
 
-CINDER_APP(ImageSequenceLoaderExampleApp, RendererGl(RendererGl::Options().msaa(16)), [](App::Settings* settings)
+CINDER_APP(ImageSequenceLoaderApp, RendererGl(RendererGl::Options().msaa(16)), [](App::Settings* settings)
 {
 	settings->setWindowSize(1280, 720);
 	settings->setFrameRate(30.0f);
