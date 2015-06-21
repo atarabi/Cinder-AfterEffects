@@ -6,7 +6,7 @@ using namespace ci::app;
 using namespace std;
 using namespace atarabi;
 
-class CameraExampleApp : public AppAE {
+class CameraApp : public AppAE {
 public:
 	void initializeAE() override;
 	void setupAE() override;
@@ -17,7 +17,7 @@ private:
 	CameraAE camera_;
 };
 
-void CameraExampleApp::initializeAE()
+void CameraApp::initializeAE()
 {
 	addCameraParameter();
 	addParameter("Position", Vec3f{0.5f, 0.5f, 0.f});
@@ -25,18 +25,18 @@ void CameraExampleApp::initializeAE()
 	addParameter("Size", 50.f);
 }
 
-void CameraExampleApp::setupAE()
+void CameraApp::setupAE()
 {
 	camera_.setPerspective(60.f, static_cast<float>(getWidth()) / static_cast<float>(getHeight()), 5.f, 5000.f);
 }
 
-void CameraExampleApp::updateAE()
+void CameraApp::updateAE()
 {
 	camera_.setParameter(getCameraParameter());
 	gl::setMatrices(camera_);
 }
 
-void CameraExampleApp::drawAE()
+void CameraApp::drawAE()
 {
 	gl::clear(ColorA(0, 0, 0, 0));
 	Color color = getParameter("Color");
@@ -46,4 +46,4 @@ void CameraExampleApp::drawAE()
 	gl::drawCube(position, {size, size, size});
 }
 
-CINDER_APP_NATIVE(CameraExampleApp, RendererGl)
+CINDER_APP_NATIVE(CameraApp, RendererGl)

@@ -6,7 +6,7 @@ using namespace ci::app;
 using namespace std;
 using namespace atarabi;
 
-class ImageSequenceLoaderExampleApp : public AppAE {
+class ImageSequenceLoaderApp : public AppAE {
 public:
 	void initializeAE() override;
 	void setupAE() override;
@@ -18,20 +18,20 @@ private:
 	gl::Texture texture_;
 };
 
-void ImageSequenceLoaderExampleApp::initializeAE()
+void ImageSequenceLoaderApp::initializeAE()
 {
 	addParameter("Color", Color{ 1.f, 0.5f, 0.5f });
 	loader_.setLoop(true);
 }
 
-void ImageSequenceLoaderExampleApp::setupAE()
+void ImageSequenceLoaderApp::setupAE()
 {
 	//the selected AV layer's source must be an image sequence.
 	loader_.load(getSourcePath());
 	texture_.reset();
 }
 
-void ImageSequenceLoaderExampleApp::updateAE()
+void ImageSequenceLoaderApp::updateAE()
 {
 	if (!loader_.empty())
 	{
@@ -40,7 +40,7 @@ void ImageSequenceLoaderExampleApp::updateAE()
 	}
 }
 
-void ImageSequenceLoaderExampleApp::drawAE()
+void ImageSequenceLoaderApp::drawAE()
 {
 	gl::clear(Color(0, 0, 0));
 
@@ -52,4 +52,4 @@ void ImageSequenceLoaderExampleApp::drawAE()
 	}
 }
 
-CINDER_APP_NATIVE(ImageSequenceLoaderExampleApp, RendererGl)
+CINDER_APP_NATIVE(ImageSequenceLoaderApp, RendererGl)
