@@ -1,0 +1,55 @@
+#version 420 core
+#extension GL_ARB_compute_shader : enable
+#extension GL_ARB_shader_storage_buffer_object : enable
+#extension GL_ARB_compute_variable_group_size : enable
+
+uniform vec3  uPosition1;
+uniform float uForce1;
+uniform vec3  uPosition2;
+uniform float uForce2;
+uniform float  uFps;
+
+struct Particle
+{
+	vec3	position;
+	vec3	velocity;
+	vec4	color;
+	float	damping;
+};
+
+layout( std140, binding = 0 ) buffer Particles
+{
+    Particle particles[];
+};
+
+layout( local_size_x = 128, local_size_y = 1, local_size_z = 1 ) in;
+
+const vec3 forcePosition[2] = vec3[2]( uPosition1, uPosition2 );
+const float force[2] = float[2]( uForce1, uForce2 );
+const float coeff = 100.0;
+
+void main()
+{
+  uint gid = gl_GlobalInvocationID.x;
+
+  vec3 position = particles[gid].position;
+  vec3 velocity = particles[gid].velocity;
+  vec4 color =  particles[gid].color;
+  float damping =  particles[gid].damping;
+
+  vec3 accel = vec3(0.0);
+
+  for (int i = 0; i < 2; ++i) {
+	vec3 dir = position - forcePosition[i];
+	float dist2 = max( 1.0, length( dir ) );
+	dist2 *= dist2;
+	accel += coeff * force[i] * dir / dist2;
+  }
+
+  velocity += accel / uFps;
+
+  velocity *= pow( damping, 1.0 / uFps );
+
+  particles[gid].position = position + velocity / uFps;
+  particles[gid].velocity = velocity;
+}
