@@ -312,6 +312,7 @@ void AppAE::transition(State state)
 
 			if (useFbo())
 			{
+				mWriter.setFlip(false);
 				setWindowSize({ 640, 360 });
 				mFbo = cinder::gl::Fbo::create(mWidth, mHeight, cinder::gl::Fbo::Format{}.samples(16));
 				auto area = mFbo->getBounds();
@@ -320,6 +321,7 @@ void AppAE::transition(State state)
 			}
 			else
 			{
+				mWriter.setFlip(true);
 				setWindowSize({ mWidth, mHeight });
 			}
 

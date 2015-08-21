@@ -29,12 +29,12 @@
 
 namespace atarabi {
 
-ImageWriter::ImageWriter() : mUnpremultiply{ false }, mAbort{ false }, mImages{ DEFAULT_BUFFER_SIZE }
+ImageWriter::ImageWriter() : mFlip{ false }, mUnpremultiply{ false }, mAbort { false }, mImages{ DEFAULT_BUFFER_SIZE }
 {
 	initThread();
 }
 
-ImageWriter::ImageWriter(std::size_t buffer_size) : mUnpremultiply{ false }, mAbort{ false }, mImages{ buffer_size }
+ImageWriter::ImageWriter(std::size_t buffer_size) : mFlip{ false }, mUnpremultiply{ false }, mAbort{ false }, mImages{ buffer_size }
 {
 	initThread();
 }
@@ -81,7 +81,12 @@ void ImageWriter::writeImage()
 				{
 					cinder::ip::unpremultiply(&surface);
 				}
-				cinder::ip::flipVertical(&surface);
+
+				if (mFlip)
+				{
+					cinder::ip::flipVertical( &surface );
+				}
+
 				cinder::writeImage(path, surface);
 			}
 			//when window is minimized

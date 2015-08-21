@@ -53,6 +53,7 @@ public:
 
 	~ImageWriter();
 
+	void setFlip( bool flip ) { mFlip = flip; }
 	void setUnpremultiply(bool unpremultiply) { mUnpremultiply = unpremultiply; }
 
 	void pushImage(const std::string &path, const cinder::Surface &surface);
@@ -64,6 +65,7 @@ private:
 
 	std::shared_ptr<std::thread> mThread;
 	cinder::ConcurrentCircularBuffer<Image> mImages;
+	bool mFlip;
 	bool mUnpremultiply;
 	bool mAbort;
 };
