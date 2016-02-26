@@ -196,6 +196,7 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\OSC\src\Osc.h" />
     <ClInclude Include="..\include\Resources.h" />
     <ClInclude Include="..\..\..\src\AppAE.h" />
     <ClInclude Include="..\..\..\src\AppAEdev.h" />
@@ -204,42 +205,14 @@
     <ClInclude Include="..\..\..\src\IAppAE.h" />
     <ClInclude Include="..\..\..\src\ImageSequenceLoader.h" />
     <ClInclude Include="..\..\..\src\ImageWriter.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\OscArg.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\OscBundle.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\OscListener.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\OscMessage.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\OscSender.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\ip\IpEndpointName.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\ip\NetworkingUtils.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\ip\PacketListener.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\ip\TimerListener.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\ip\UdpSocket.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\osc\MessageMappingOscPacketListener.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\osc\OscException.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\osc\OscHostEndianness.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\osc\OscOutboundPacketStream.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\osc\OscPacketListener.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\osc\OscPrintReceivedElements.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\osc\OscReceivedElements.h" />
-    <ClInclude Include="..\..\..\..\OSC\src\osc\OscTypes.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\OSC\src\Osc.cpp" />
     <ClCompile Include="..\src\ParticleCSApp.cpp" />
     <ClCompile Include="..\..\..\src\AppAE.cpp" />
     <ClCompile Include="..\..\..\src\AppAEdev.cpp" />
     <ClCompile Include="..\..\..\src\ImageSequenceLoader.cpp" />
     <ClCompile Include="..\..\..\src\ImageWriter.cpp" />
-    <ClCompile Include="..\..\..\..\OSC\src\OscBundle.cpp" />
-    <ClCompile Include="..\..\..\..\OSC\src\OscListener.cpp" />
-    <ClCompile Include="..\..\..\..\OSC\src\OscMessage.cpp" />
-    <ClCompile Include="..\..\..\..\OSC\src\OscSender.cpp" />
-    <ClCompile Include="..\..\..\..\OSC\src\ip\IpEndpointName.cpp" />
-    <ClCompile Include="..\..\..\..\OSC\src\osc\OscOutboundPacketStream.cpp" />
-    <ClCompile Include="..\..\..\..\OSC\src\osc\OscPrintReceivedElements.cpp" />
-    <ClCompile Include="..\..\..\..\OSC\src\osc\OscReceivedElements.cpp" />
-    <ClCompile Include="..\..\..\..\OSC\src\osc\OscTypes.cpp" />
-    <ClCompile Include="..\..\..\..\OSC\src\ip\win32\NetworkingUtils.cpp" />
-    <ClCompile Include="..\..\..\..\OSC\src\ip\win32\UdpSocket.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

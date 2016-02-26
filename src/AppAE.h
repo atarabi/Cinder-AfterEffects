@@ -26,10 +26,10 @@
 
 #include "IAppAE.h"
 #include "cinder/gl/Fbo.h"
-#include "OscListener.h"
-#include "OscSender.h"
+#include "Osc.h"
 #include "ImageWriter.h"
 #include <map>
+#include <queue>
 
 namespace atarabi {
 
@@ -38,8 +38,11 @@ namespace atarabi {
 */
 class AppAE : public IAppAE {
 public:
-	static const int SERVER_PORT = 3000;
-	static const int CLIENT_PORT = 3001;
+	static const int LOCAL_PORT = 2999;
+	static const int APP_PORT = 3000;
+	static const int EXTENSION_PORT = 3001;
+	
+	AppAE();
 
 	void setup() final;
 	void update() final;
@@ -124,7 +127,7 @@ private:
 	bool isParameterCached() const;
 	void transition(State state);
 	void setdown();
-	void processMessage();
+	void processMessage(const cinder::osc::Message &message);
 	void processSetupMessage(const cinder::osc::Message &message, const std::vector<std::string> &paths);
 	void processPrerenderMessage(const cinder::osc::Message &message, const std::vector<std::string> &paths);
 	void writeImage();
@@ -139,8 +142,9 @@ private:
 	std::map<std::string, Getter> mGetters;
 	std::map<std::string, Setter> mSetters;
 
-	cinder::osc::Sender mSender;
-	cinder::osc::Listener mListener;
+	cinder::osc::SenderUdp mSender;
+	cinder::osc::ReceiverUdp mReceiver;
+	std::queue<cinder::osc::Message> mMessages;
 	ImageWriter mWriter;
 
 	//from AE

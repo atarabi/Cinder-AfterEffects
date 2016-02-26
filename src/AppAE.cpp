@@ -1,7 +1,7 @@
 /*
 *	The MIT License (MIT)
 *
-*	Copyright (c) 2015 Kareobana
+*	Copyright (c) 2015-2016 Kareobana
 *
 *	Permission is hereby granted, free of charge, to any person obtaining a copy
 *	of this software and associated documentation files (the "Software"), to deal
@@ -70,37 +70,42 @@ void addValueToMessage(cinder::osc::Message &message, ParameterType type, Parame
 	switch (type)
 	{
 		case ParameterType::Checkbox:
-			message.addIntArg(static_cast<int32_t>(value.checkbox.value));
+			message.append(static_cast<int32_t>(value.checkbox.value));
 			break;
 		case ParameterType::Slider:
-			message.addFloatArg(value.slider.value);
+			message.append(value.slider.value);
 			break;
 		case ParameterType::Point:
-			message.addFloatArg(value.point.x);
-			message.addFloatArg(value.point.y);
+			message.append(value.point.x);
+			message.append(value.point.y);
 			break;
 		case ParameterType::Point3D:
-			message.addFloatArg(value.point3d.x);
-			message.addFloatArg(value.point3d.y);
-			message.addFloatArg(value.point3d.z);
+			message.append(value.point3d.x);
+			message.append(value.point3d.y);
+			message.append(value.point3d.z);
 			break;
 		case ParameterType::Color:
-			message.addFloatArg(value.color.r);
-			message.addFloatArg(value.color.g);
-			message.addFloatArg(value.color.b);
+			message.append(value.color.r);
+			message.append(value.color.g);
+			message.append(value.color.b);
 			break;
 	}
 }
 
 } //anonymous namespace
 
+AppAE::AppAE(): mSender( LOCAL_PORT, "127.0.0.1", EXTENSION_PORT ), mReceiver( APP_PORT ) {}
 
 void AppAE::setup()
 {
 	mPath = cinder::getHomeDirectory().string();
-	mSender.setup("localhost", CLIENT_PORT);
-	mListener.setup(SERVER_PORT);
-
+	mSender.bind();
+	mReceiver.setListener("/cinder/*", [this] (const cinder::osc::Message &message) {
+		std::cout << message.getAddress() << std::endl;
+		mMessages.push(std::move(message));
+	});
+	mReceiver.bind();
+	mReceiver.listen();
 	initializeAE();
 	transition(State::Setup);
 }
@@ -152,7 +157,7 @@ void AppAE::draw()
 		{
 			cinder::osc::Message reply;
 			reply.setAddress("/cinder/render/" + std::to_string(mCurrentFrame));
-			mSender.sendMessage(reply);
+			mSender.send(reply);
 		}
 
 		++mCurrentFrame;
@@ -163,9 +168,11 @@ void AppAE::draw()
 		}
 	}
 
-	while (mListener.hasWaitingMessages())
+	while (!mMessages.empty())
 	{
-		processMessage();
+		const auto &message = mMessages.front();
+		processMessage(message);
+		mMessages.pop();
 	}
 }
 
@@ -345,7 +352,7 @@ void AppAE::setdown()
 	{
 		cinder::osc::Message reply;
 		reply.setAddress("/cinder/render/write");
-		mSender.sendMessage(reply);
+		mSender.send(reply);
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
@@ -364,9 +371,9 @@ void AppAE::setdown()
 			{
 				cinder::osc::Message reply;
 				reply.setAddress(prefix + "begin");
-				reply.addStringArg("camera");
-				reply.addIntArg(static_cast<int32_t>(static_cast<double>(valueSize) / MAX_CAMERA_ARG_NUM + 0.5f));
-				mSender.sendMessage(reply);
+				reply.append("camera");
+				reply.append(static_cast<int32_t>(static_cast<double>(valueSize) / MAX_CAMERA_ARG_NUM + 0.5f));
+				mSender.send(reply);
 			}
 
 			for (int i = 0, n = 0; i < valueSize; i += MAX_CAMERA_ARG_NUM, ++n)
@@ -416,17 +423,17 @@ void AppAE::setdown()
 					float zoom = getHeight() / (2.f * std::tan(fov / 2.f));
 
 					//add args
-					reply.addIntArg(frame);
-					reply.addFloatArg(position.x);
-					reply.addFloatArg(position.y);
-					reply.addFloatArg(position.z);
-					reply.addFloatArg(orientation.x);
-					reply.addFloatArg(orientation.y);
-					reply.addFloatArg(orientation.z);
-					reply.addFloatArg(zoom);
+					reply.append(frame);
+					reply.append(position.x);
+					reply.append(position.y);
+					reply.append(position.z);
+					reply.append(orientation.x);
+					reply.append(orientation.y);
+					reply.append(orientation.z);
+					reply.append(zoom);
 				}
 
-				mSender.sendMessage(reply);
+				mSender.send(reply);
 			}
 		}
 
@@ -455,9 +462,9 @@ void AppAE::setdown()
 			{
 				cinder::osc::Message reply;
 				reply.setAddress(prefix + "begin");
-				reply.addStringArg(parmeterTypeToString(type));
-				reply.addIntArg(static_cast<int32_t>(static_cast<double>(valueSize) / MAX_ARG_NUM + 0.5f));
-				mSender.sendMessage(reply);
+				reply.append(parmeterTypeToString(type));
+				reply.append(static_cast<int32_t>(static_cast<double>(valueSize) / MAX_ARG_NUM + 0.5f));
+				mSender.send(reply);
 			}
 
 			for (int i = 0, n = 0; i < valueSize; i += MAX_ARG_NUM, ++n)
@@ -471,11 +478,11 @@ void AppAE::setdown()
 					auto &pair = values[i + j];
 					auto frame = pair.first;
 					auto &value = pair.second;
-					reply.addIntArg(frame);
+					reply.append(frame);
 					addValueToMessage(reply, type, value);
 				}
 
-				mSender.sendMessage(reply);
+				mSender.send(reply);
 			}
 		}
 	}
@@ -487,30 +494,27 @@ void AppAE::setdown()
 
 		//path
 		std::string sequencePath = mPath + "/" + mFileName + "_" + zfill(0, 5) + ".png";
-		reply.addStringArg(sequencePath);
+		reply.append(sequencePath);
 
 		//executable path
 		auto &argv = getCommandLineArgs();
 		cinder::fs::path executablePath = cinder::fs::system_complete(argv[0]);
-		reply.addStringArg(executablePath.string());
+		reply.append(executablePath.string());
 
 		//source path
-		reply.addStringArg(mSourcePath);
+		reply.append(mSourcePath);
 
 		//source time
-		reply.addFloatArg(mSourceTime);
+		reply.append(mSourceTime);
 
-		mSender.sendMessage(reply);
+		mSender.send(reply);
 	}
 
 	transition(State::Setup);
 }
 
-void AppAE::processMessage()
+void AppAE::processMessage(const cinder::osc::Message &message)
 {
-	cinder::osc::Message message;
-	mListener.getNextMessage(&message);
-
 	auto paths = cinder::split(message.getAddress(), '/');
 
 	if (!paths.empty())
@@ -543,52 +547,52 @@ void AppAE::processMessage()
 
 void AppAE::processSetupMessage(const cinder::osc::Message &message, const std::vector<std::string> &paths)
 {
-	std::string path = message.getArgAsString(SETUP_ARG_PATH);
+	std::string path = message.getArgString(SETUP_ARG_PATH);
 	if (!path.empty())
 	{
 		mPath = path;
 	}
 
-	std::string fileName = message.getArgAsString(SETUP_ARG_FILENAME);
+	std::string fileName = message.getArgString(SETUP_ARG_FILENAME);
 	if (!fileName.empty())
 	{
 		mFileName = fileName;
 	}
 
-	int32_t cache = message.getArgAsInt32(SETUP_ARG_CACHE);
+	int32_t cache = message.getArgInt32(SETUP_ARG_CACHE);
 	mCache = cache ? true : false;
 
-	int32_t write = message.getArgAsInt32(SETUP_ARG_WRITE);
+	int32_t write = message.getArgInt32(SETUP_ARG_WRITE);
 	mWrite = write ? true : false;
 
-	int32_t fbo = message.getArgAsInt32(SETUP_ARG_FBO);
+	int32_t fbo = message.getArgInt32(SETUP_ARG_FBO);
 	mUseFbo = fbo ? true : false;
 
-	float fps = message.getArgAsFloat(SETUP_ARG_FPS);
+	float fps = message.getArgFloat(SETUP_ARG_FPS);
 	if (fps > 0.f)
 	{
 		mFps = fps;
 		setFrameRate(fps);
 	}
 
-	int32_t duration = message.getArgAsInt32(SETUP_ARG_DURATION);
+	int32_t duration = message.getArgInt32(SETUP_ARG_DURATION);
 	if (duration > 0)
 	{
 		mDuration = duration;
 	}
 
-	int32_t width = message.getArgAsInt32(SETUP_ARG_WIDTH);
-	int32_t height = message.getArgAsInt32(SETUP_ARG_HEIGHT);
+	int32_t width = message.getArgInt32(SETUP_ARG_WIDTH);
+	int32_t height = message.getArgInt32(SETUP_ARG_HEIGHT);
 	if (width > 0 && height > 0)
 	{
 		mWidth = width;
 		mHeight = height;
 	}
 
-	std::string sourcePath = message.getArgAsString(SETUP_ARG_SOURCE);
+	std::string sourcePath = message.getArgString(SETUP_ARG_SOURCE);
 	if (!sourcePath.empty())
 	{
-		float sourceTime = message.getArgAsFloat(SETUP_ARG_SOURCETIME);
+		float sourceTime = message.getArgFloat(SETUP_ARG_SOURCETIME);
 		mSourcePath = sourcePath;
 		mSourceTime = sourceTime;
 	}
@@ -598,9 +602,9 @@ void AppAE::processSetupMessage(const cinder::osc::Message &message, const std::
 	reply.setAddress(message.getAddress());
 
 	//camera
-	reply.addIntArg(mUseCamera);
+	reply.append(mUseCamera);
 	//cache
-	reply.addIntArg(isParameterCached());
+	reply.append(isParameterCached());
 
 	std::vector<Getter*> getters;
 	for (auto &pair : mGetters)
@@ -614,12 +618,12 @@ void AppAE::processSetupMessage(const cinder::osc::Message &message, const std::
 
 	for (auto &getter : getters)
 	{
-		reply.addStringArg(getter->name);
-		reply.addStringArg(parmeterTypeToString(getter->type));
+		reply.append(getter->name);
+		reply.append(parmeterTypeToString(getter->type));
 		addValueToMessage(reply, getter->type, getter->initialValue);
 	}
 
-	mSender.sendMessage(reply);
+	mSender.send(reply);
 }
 
 void AppAE::processPrerenderMessage(const cinder::osc::Message &message, const std::vector<std::string> &paths)
@@ -654,12 +658,12 @@ void AppAE::processPrerenderMessage(const cinder::osc::Message &message, const s
 
 			for (int i = 0; i < argNum; i += 13)
 			{
-				float fov = message.getArgAsFloat(i);
+				float fov = message.getArgFloat(i);
 				cinder::mat4 matrix{
-					message.getArgAsFloat(i + 1), message.getArgAsFloat(i + 2), message.getArgAsFloat(i + 3), 0.f,
-					message.getArgAsFloat(i + 4), message.getArgAsFloat(i + 5), message.getArgAsFloat(i + 6), 0.f,
-					message.getArgAsFloat(i + 7), message.getArgAsFloat(i + 8), message.getArgAsFloat(i + 9), 0.f,
-					message.getArgAsFloat(i + 10), message.getArgAsFloat(i + 11), message.getArgAsFloat(i + 12), 1.f
+					message.getArgFloat(i + 1), message.getArgFloat(i + 2), message.getArgFloat(i + 3), 0.f,
+					message.getArgFloat(i + 4), message.getArgFloat(i + 5), message.getArgFloat(i + 6), 0.f,
+					message.getArgFloat(i + 7), message.getArgFloat(i + 8), message.getArgFloat(i + 9), 0.f,
+					message.getArgFloat(i + 10), message.getArgFloat(i + 11), message.getArgFloat(i + 12), 1.f
 				};
 
 				camera_getters.push_back({ fov, matrix });
@@ -691,7 +695,7 @@ void AppAE::processPrerenderMessage(const cinder::osc::Message &message, const s
 					for (int i = 0; i < argNum; ++i)
 					{
 						ParameterValue value;
-						value.checkbox.value = message.getArgAsInt32(i) ? true : false;
+						value.checkbox.value = message.getArgInt32(i) ? true : false;
 						values.push_back(value);
 					}
 					break;
@@ -699,7 +703,7 @@ void AppAE::processPrerenderMessage(const cinder::osc::Message &message, const s
 					for (int i = 0; i < argNum; ++i)
 					{
 						ParameterValue value;
-						value.slider.value = message.getArgAsFloat(i);
+						value.slider.value = message.getArgFloat(i);
 						values.push_back(value);
 					}
 					break;
@@ -707,8 +711,8 @@ void AppAE::processPrerenderMessage(const cinder::osc::Message &message, const s
 					for (int i = 0; i < argNum; i += 2)
 					{
 						ParameterValue value;
-						value.point.x = message.getArgAsFloat(i);
-						value.point.y = message.getArgAsFloat(i + 1);
+						value.point.x = message.getArgFloat(i);
+						value.point.y = message.getArgFloat(i + 1);
 						values.push_back(value);
 					}
 					break;
@@ -716,9 +720,9 @@ void AppAE::processPrerenderMessage(const cinder::osc::Message &message, const s
 					for (int i = 0; i < argNum; i += 3)
 					{
 						ParameterValue value;
-						value.point3d.x = message.getArgAsFloat(i);
-						value.point3d.y = message.getArgAsFloat(i + 1);
-						value.point3d.z = message.getArgAsFloat(i + 2);
+						value.point3d.x = message.getArgFloat(i);
+						value.point3d.y = message.getArgFloat(i + 1);
+						value.point3d.z = message.getArgFloat(i + 2);
 						values.push_back(value);
 					}
 					break;
@@ -726,9 +730,9 @@ void AppAE::processPrerenderMessage(const cinder::osc::Message &message, const s
 					for (int i = 0; i < argNum; i += 3)
 					{
 						ParameterValue value;
-						value.color.r = message.getArgAsFloat(i);
-						value.color.g = message.getArgAsFloat(i + 1);
-						value.color.b = message.getArgAsFloat(i + 2);
+						value.color.r = message.getArgFloat(i);
+						value.color.g = message.getArgFloat(i + 1);
+						value.color.b = message.getArgFloat(i + 2);
 						values.push_back(value);
 					}
 					break;
@@ -749,8 +753,8 @@ void AppAE::processPrerenderMessage(const cinder::osc::Message &message, const s
 
 	cinder::osc::Message reply;
 	reply.setAddress(message.getAddress());
-	reply.addStringArg(err);
-	mSender.sendMessage(reply);
+	reply.append(err);
+	mSender.send(reply);
 }
 
 void AppAE::writeImage()
